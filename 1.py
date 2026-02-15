@@ -1,0 +1,2 @@
+import streamlit_kanbanjs
+print(streamlit_kanbanjs.__file__)

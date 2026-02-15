@@ -1,0 +1,13 @@
+Metadata-Version: 1.2
+Name: streamlit-kanbanjs
+Version: 0.1.0
+Summary: Komponent Kanban Board dla Streamlit z SortableJS
+Home-page: https://github.com/twojlogin/streamlit-kanbanjs
+Author: Twój Nick
+License: UNKNOWN
+Description: 8 pionowych kontenerów z drag and drop między nimi, zmianą kolejności wewnątrz kontenera i kolorami
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7

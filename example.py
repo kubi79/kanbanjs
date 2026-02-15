@@ -27,13 +27,18 @@ kolory = [
 # Użycie komponentu z kolorami
 result = kanban_board(containers, key="kanban1", container_colors=kolory)
 
-# Wyświetlenie wyniku
-if result:
+# Wyświetlenie wyniku - POPRAWIONE
+if result is not None and isinstance(result, dict):
     st.write("Zmiana:", result)
     
-    if result.get('type') == 'move':
-        st.success(f"Przeniesiono {result['item']} z kontenera {int(result['containerFrom'])+1} do {int(result['containerTo'])+1}")
-    elif result.get('type') == 'reorder':
-        st.info(f"Zmieniono kolejność w kontenerze {int(result['container'].replace('list-',''))+1}")
-
-st.write("Ostatnia zmiana:", result)
+    # Sprawdzanie typu bez używania .get()
+    if 'type' in result:
+        if result['type'] == 'move':
+            container_from = int(result.get('containerFrom', '0')) + 1
+            container_to = int(result.get('containerTo', '0')) + 1
+            st.success(f"Przeniesiono {result.get('item', '')} z kontenera {container_from} do {container_to}")
+        elif result['type'] == 'reorder':
+            container = int(result.get('container', 'list-0').replace('list-','')) + 1
+            st.info(f"Zmieniono kolejność w kontenerze {container}")
+elif result is not None:
+    st.write("Ostatnia zmiana:", result)
