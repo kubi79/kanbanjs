@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: transparent;
+            font-family: sans-serif;
+        }
+        
+        #board {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            min-height: 700px;
+        }
+        
+        .container {
+            flex: 0 0 300px;
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 600px;
+            transition: background-color 0.3s;
+        }
+        
+        .container h3 {
+            margin: 0 0 15px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 5px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(5px);
+        }
+        
+        .item-list {
+            min-height: 500px;
+        }
+        
+        .item {
+            background: white;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            cursor: move;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .item:hover {
+            background: #f8f9fa;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            transition: all 0.2s;
+        }
+        
+        .item:active {
+            cursor: grabbing;
+            opacity: 0.8;
+        }
+        
+        /* Pasek przewijania */
+        #board::-webkit-scrollbar {
+            height: 12px;
+        }
+        
+        #board::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+        
+        #board::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+        
+        #board::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #c8ebfb;
+            border: 2px dashed #3498db;
+        }
+        
+        .sortable-drag {
+            opacity: 0.8;
+            transform: rotate(2deg);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="board"></div>
+    
+    <script>
+        // Dane z Pythona
+        const data = /* CONTAINERS_DATA */;
+        const containersData = data.containers;
+        const containerColors = data.colors;
+        
+        // Generowanie kontenerów
+        const board = document.getElementById('board');
+        
+        containersData.forEach((container, i) => {
+            const containerDiv = document.createElement('div');
+            containerDiv.className = 'container';
+            containerDiv.dataset.containerId = i;
+            containerDiv.style.backgroundColor = containerColors[i] || '#f0f2f6';
+            
+            const header = document.createElement('h3');
+            header.textContent = container.header;
+            header.style.background = `linear-gradient(135deg, ${containerColors[i]}dd, ${containerColors[i]}99)`;
+            
+            const itemList = document.createElement('div');
+            itemList.className = 'item-list';
+            itemList.id = `list-${i}`;
+            
+            container.items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                itemDiv.dataset.id = item;
+                itemDiv.textContent = item;
+                itemList.appendChild(itemDiv);
+            });
+            
+            containerDiv.appendChild(header);
+            containerDiv.appendChild(itemList);
+            board.appendChild(containerDiv);
+        });
+        
+        // Inicjalizacja Sortable dla każdej listy
+        const lists = document.querySelectorAll('.item-list');
+        const sortables = [];
+        
+        lists.forEach(list => {
+            const sortable = new Sortable(list, {
+                group: 'shared',
+                animation: 200,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                handle: '.item',
+                
+                onEnd: function(evt) {
+                    const data = {
+                        type: 'move',
+                        item: evt.item.dataset.id,
+                        from: evt.from.id,
+                        to: evt.to.id,
+                        oldIndex: evt.oldIndex,
+                        newIndex: evt.newIndex,
+                        containerFrom: evt.from.id.replace('list-', ''),
+                        containerTo: evt.to.id.replace('list-', '')
+                    };
+                    
+                    if (window.Streamlit) {
+                        window.Streamlit.setComponentValue(data);
+                    }
+                },
+                
+                onUpdate: function(evt) {
+                    const data = {
+                        type: 'reorder',
+                        item: evt.item.dataset.id,
+                        container: evt.from.id,
+                        oldIndex: evt.oldIndex,
+                        newIndex: evt.newIndex
+                    };
+                    
+                    if (window.Streamlit) {
+                        window.Streamlit.setComponentValue(data);
+                    }
+                }
+            });
+            sortables.push(sortable);
+        });
+        
+        function sendHeight() {
+            if (window.Streamlit) {
+                window.Streamlit.setFrameHeight(document.body.scrollHeight);
+            }
+        }
+        
+        window.addEventListener('load', sendHeight);
+        window.addEventListener('resize', sendHeight);
+        
+        if (window.Streamlit) {
+            window.Streamlit.setComponentReady();
+        }
+    </script>
+</body>
+</html>
