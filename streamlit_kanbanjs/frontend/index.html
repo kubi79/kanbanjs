@@ -18,14 +18,14 @@
             gap: 20px;
             overflow-x: auto;
             padding-bottom: 20px;
-            min-height: 700px;
+            min-height: 600px;
         }
         
         .container {
-            flex: 0 0 300px;
+            flex: 0 0 var(--container-width, 300px);
             border-radius: 10px;
             padding: 15px;
-            min-height: 600px;
+            min-height: 500px;
             transition: background-color 0.3s;
         }
         
@@ -41,7 +41,7 @@
         }
         
         .item-list {
-            min-height: 500px;
+            min-height: 400px;
         }
         
         .item {
@@ -103,36 +103,29 @@
     <div id="board"></div>
     
     <script>
-        // Funkcja inicjalizująca komponent
         function initKanban() {
             try {
-                // Dane z Pythona
                 const data = /* CONTAINERS_DATA */;
                 const containersData = data.containers;
                 const containerColors = data.colors;
-                const componentKey = data.component_key || data.component_id || null;
+                const componentKey = data.component_key;
+                const containerWidth = data.container_width || 300;
                 
-                // Sprawdź czy dane są poprawne
                 if (!containersData || !Array.isArray(containersData)) {
                     console.error('Brak danych kontenerów');
                     return;
                 }
                 
-                // Wyczyść board przed ponownym generowaniem
                 const board = document.getElementById('board');
-                if (!board) {
-                    console.error('Nie znaleziono elementu board');
-                    return;
-                }
+                if (!board) return;
                 
                 board.innerHTML = '';
                 
-                // Generowanie kontenerów
+                // Ustaw zmienną CSS dla szerokości kontenera
+                board.style.setProperty('--container-width', containerWidth + 'px');
+                
                 containersData.forEach((container, i) => {
-                    if (!container || !container.header) {
-                        console.warn(`Pominięto kontener ${i} - brak nagłówka`);
-                        return;
-                    }
+                    if (!container || !container.header) return;
                     
                     const containerDiv = document.createElement('div');
                     containerDiv.className = 'container';
@@ -149,7 +142,6 @@
                     itemList.className = 'item-list';
                     itemList.id = `list-${i}`;
                     
-                    // Dodawanie zadań
                     if (container.items && Array.isArray(container.items)) {
                         container.items.forEach(item => {
                             if (!item) return;
@@ -167,140 +159,76 @@
                     board.appendChild(containerDiv);
                 });
                 
-                // Sprawdź czy są jakieś listy do zainicjalizowania
                 const lists = document.querySelectorAll('.item-list');
-                if (lists.length === 0) {
-                    console.warn('Brak list do inicjalizacji Sortable');
-                    return;
-                }
-                
-                // Inicjalizacja Sortable dla każdej listy
-                const sortables = [];
                 
                 lists.forEach(list => {
-                    try {
-                        const sortable = new Sortable(list, {
-                            group: 'shared',
-                            animation: 200,
-                            ghostClass: 'sortable-ghost',
-                            dragClass: 'sortable-drag',
-                            handle: '.item',
-                            
-                            onEnd: function(evt) {
-                                try {
-                                    const resultData = {
-                                        type: 'move',
-                                        item: evt.item ? evt.item.dataset.id : null,
-                                        from: evt.from ? evt.from.id : null,
-                                        to: evt.to ? evt.to.id : null,
-                                        oldIndex: evt.oldIndex,
-                                        newIndex: evt.newIndex,
-                                        containerFrom: evt.from ? evt.from.id.replace('list-', '') : null,
-                                        containerTo: evt.to ? evt.to.id.replace('list-', '') : null
-                                    };
-                                    
-                                    // Dodaj klucz komponentu jeśli istnieje
-                                    if (componentKey) {
-                                        resultData.key = componentKey;
-                                    }
-                                    
-                                    if (window.Streamlit) {
-                                        window.Streamlit.setComponentValue(resultData);
-                                    }
-                                } catch (e) {
-                                    console.error('Błąd w onEnd:', e);
-                                }
-                            },
-                            
-                            onUpdate: function(evt) {
-                                try {
-                                    const resultData = {
-                                        type: 'reorder',
-                                        item: evt.item ? evt.item.dataset.id : null,
-                                        container: evt.from ? evt.from.id : null,
-                                        oldIndex: evt.oldIndex,
-                                        newIndex: evt.newIndex
-                                    };
-                                    
-                                    // Dodaj klucz komponentu jeśli istnieje
-                                    if (componentKey) {
-                                        resultData.key = componentKey;
-                                    }
-                                    
-                                    if (window.Streamlit) {
-                                        window.Streamlit.setComponentValue(resultData);
-                                    }
-                                } catch (e) {
-                                    console.error('Błąd w onUpdate:', e);
-                                }
-                            }
-                        });
+                    new Sortable(list, {
+                        group: 'shared',
+                        animation: 200,
+                        ghostClass: 'sortable-ghost',
+                        dragClass: 'sortable-drag',
+                        handle: '.item',
                         
-                        sortables.push(sortable);
-                    } catch (e) {
-                        console.error('Błąd inicjalizacji Sortable dla listy:', e);
-                    }
+                        onEnd: function(evt) {
+                            const resultData = {
+                                type: 'move',
+                                item: evt.item ? evt.item.dataset.id : null,
+                                from: evt.from ? evt.from.id : null,
+                                to: evt.to ? evt.to.id : null,
+                                oldIndex: evt.oldIndex,
+                                newIndex: evt.newIndex,
+                                containerFrom: evt.from ? evt.from.id.replace('list-', '') : null,
+                                containerTo: evt.to ? evt.to.id.replace('list-', '') : null
+                            };
+                            
+                            if (componentKey) resultData.key = componentKey;
+                            
+                            if (window.Streamlit) {
+                                window.Streamlit.setComponentValue(resultData);
+                            }
+                        },
+                        
+                        onUpdate: function(evt) {
+                            const resultData = {
+                                type: 'reorder',
+                                item: evt.item ? evt.item.dataset.id : null,
+                                container: evt.from ? evt.from.id : null,
+                                oldIndex: evt.oldIndex,
+                                newIndex: evt.newIndex
+                            };
+                            
+                            if (componentKey) resultData.key = componentKey;
+                            
+                            if (window.Streamlit) {
+                                window.Streamlit.setComponentValue(resultData);
+                            }
+                        }
+                    });
                 });
-                
-                console.log(`Zainicjalizowano ${sortables.length} list Sortable`);
                 
             } catch (e) {
                 console.error('Błąd inicjalizacji Kanban:', e);
             }
         }
         
-        // Funkcja do wysyłania wysokości
+        // Reszta kodu bez zmian...
         function sendHeight() {
-            try {
-                if (window.Streamlit) {
-                    const height = document.body.scrollHeight;
-                    window.Streamlit.setFrameHeight(height);
-                }
-            } catch (e) {
-                console.error('Błąd wysyłania wysokości:', e);
+            if (window.Streamlit) {
+                window.Streamlit.setFrameHeight(document.body.scrollHeight);
             }
         }
         
-        // Inicjalizacja po załadowaniu DOM
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(initKanban, 100);  // Małe opóźnienie dla pewności
-                setTimeout(sendHeight, 200);
-            });
+            document.addEventListener('DOMContentLoaded', initKanban);
         } else {
-            setTimeout(initKanban, 100);
-            setTimeout(sendHeight, 200);
+            initKanban();
         }
         
-        // Obsługa zmiany rozmiaru
-        window.addEventListener('resize', function() {
-            setTimeout(sendHeight, 100);
-        });
+        window.addEventListener('resize', sendHeight);
         
-        // Obserwator zmian w DOM (na wypadek dynamicznych zmian)
-        const observer = new MutationObserver(function(mutations) {
-            setTimeout(sendHeight, 100);
-        });
-        
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true
-        });
-        
-        // Poinformuj Streamlit że komponent jest gotowy
         if (window.Streamlit) {
-            try {
-                window.Streamlit.setComponentReady();
-            } catch (e) {
-                console.error('Błąd setComponentReady:', e);
-            }
+            window.Streamlit.setComponentReady();
         }
-        
-        // Dodatkowe zabezpieczenie - ponowna inicjalizacja po 1 sekundzie
-        setTimeout(initKanban, 1000);
-        setTimeout(sendHeight, 1100);
-        
     </script>
 </body>
 </html>
