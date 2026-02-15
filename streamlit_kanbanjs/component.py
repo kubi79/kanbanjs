@@ -7,14 +7,15 @@ import json
 parent_dir = os.path.dirname(os.path.abspath(__file__))
 html_path = os.path.join(parent_dir, "frontend", "index.html")
 
-def kanban_board(containers, key=None, container_colors=None):
+def kanban_board(containers, key=None, container_colors=None, width=300):
     """
-    Komponent Kanban Board z 8 kontenerami w poziomie
+    Komponent Kanban Board z dowolną liczbą kontenerów w poziomie
     
     Args:
         containers: Lista słowników z kluczami 'header' i 'items'
-        key: Opcjonalny klucz dla komponentu (używany do identyfikacji w session_state)
+        key: Opcjonalny klucz dla komponentu
         container_colors: Opcjonalna lista kolorów dla kontenerów
+        width: Szerokość pojedynczego kontenera w pikselach (domyślnie 300)
     
     Returns:
         Dict z informacją o przeniesieniu lub None
@@ -41,21 +42,21 @@ def kanban_board(containers, key=None, container_colors=None):
     data = {
         'containers': containers,
         'colors': container_colors,
-        'component_key': key  # Przekazujemy key do frontendu
+        'component_key': key,
+        'container_width': width  # Dodajemy szerokość kontenera
     }
     
-    # Wstaw dane do HTML (zamień znacznik na dane JSON)
+    # Wstaw dane do HTML
     html_content = html_content.replace('/* CONTAINERS_DATA */', json.dumps(data, ensure_ascii=False))
+    
+    # Dynamiczna wysokość w zależności od liczby kontenerów
+    height = max(600, len(containers) * 100)  # Minimum 600px
     
     # Wyświetl komponent
     result = components.html(
         html_content,
-        height=800,
+        height=height + 200,  # Dodajemy miejsce na pasek przewijania
         scrolling=False
     )
-    
-    # Jeśli podano key, zapisz wynik w session_state pod tym kluczem
-    if key and result:
-        st.session_state[f"kanban_result_{key}"] = result
     
     return result
